@@ -14,6 +14,8 @@ from pathlib import Path
 # my addition to imports (used on next addition)
 import sys
 import os
+import dj_database_url
+import pyscopg2
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
