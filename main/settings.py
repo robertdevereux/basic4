@@ -15,7 +15,7 @@ from pathlib import Path
 import sys
 import os
 import dj_database_url
-import pyscopg2
+import psycopg2
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
