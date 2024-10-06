@@ -11,28 +11,36 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+
 # my addition to imports (used on next addition)
 import sys
 import os
 import dj_database_url
-import psycopg2
+import logging
+
+# Set up basic logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# my amendments to SECRET_KEY and DEBUG, and to track whether or not local/remote and server name
-sysargv=str(sys.argv[0])+"==="+str(sys.argv[1])
-remote=0
+# Get the value of the environment variable 'IS_REMOTE' and store it in is_remote_flag
+is_remote_flag = os.getenv('IS_REMOTE', 'false') == 'true'
+
+# Set DEBUG to True, both locally and remotely
+# idc swap to 'DEBUG = not is_remote_flag' to enable DEBUG locally, but disable DEBUG remotely
 DEBUG = True
-if sys.argv[1]=="main.wsgi":
-    remote=1
-    DEBUG = True # swap to false when confident remote app works
+
+# Log the values of the environment variables for debugging
+logging.debug(f"IS_REMOTE: {is_remote_flag}")
+logging.debug(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 # SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = 'django-insecure-zg8p)(fslyohy)sxefs^6mjv-mbw57tom9*kz=+dgrurz6*2kg'
+#SECRET_KEY = 'django-insecure-!$nwz7ku_wr%k+vipn*_419-qi(@t=)!gi!1jh4gw)pj@iia#_'
 # SECURITY WARNING: don't run with debug turned on in production!
 #DEBUG = True
 
@@ -80,23 +88,34 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'main.wsgi.application'
 
-# my replacement of SQLITE3 database: one default if local; another if remote
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'robert',
-        'USER': 'robert',
-        'PASSWORD': 'downingstreet',
-        'HOST': 'localhost',
-        'PORT': '',
+# My amendments to database settings based on whether we're running remotely or locally
+if is_remote_flag:
+    # Remote database (via DATABASE_URL)
+    logging.debug("Running in remote environment, using DATABASE_URL.")
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
-}
+else:
+    # Local database settings
+    logging.debug("Running in local environment, using local database settings.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'robert',
+            'USER': 'robert',
+            'PASSWORD': 'downingstreet',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
+    }
 
-if remote: # set by earlier amendment
-    import dj_database_url
-DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+#
 #DATABASES = {
 #    'default': {
 #        'ENGINE': 'django.db.backends.sqlite3',
